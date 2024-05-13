@@ -5,32 +5,29 @@ function buildMetadata(sample) {
     // get the metadata field
     let metadataField = data.metadata;
 
-    // Assign the value of the dropdown menu option to a variable
-    let dropdownMenu = d3.select("#selDataset");
-    let sampleNumber =dropdownMenu.value;
-   
     // Filter the metadata for the object with the desired sample number
     let filteredMetaData = metadataField.filter(obj => obj.id === sample);
     let arr_filtered = filteredMetaData[0];
 
-    console.log(arr_filtered);
-
     // Use d3 to select the panel with id of `#sample-metadata`
-     let PANEL = d3.select("#sample-metadata");
+    let metadataPanel = d3.select("#sample-metadata");
 
     // Use `.html("") to clear any existing metadata
-    PANEL.html("");
+     metadataPanel.html("");
 
     // Inside a loop, you will need to use d3 to append new
     // tags for each key-value in the filtered metadata.
 
-      Object.entries(arr_filtered).forEach(([key, value]) => {
-      
-        // Append a new tag for each key-value pair
-      PANEL.append("p").text(`${key}: ${arr_filtered[value]}`);
+    var h6Tags = metadataPanel.selectAll("h6")
+
+    var newh6Tags = h6Tags.enter()
+      .append("h6")
+      .text(function(d) {
+        return `${d.key}: ${d.value}`;
       });
-  });
-}
+  });  
+};
+
 
 // function to build both charts
 function buildCharts(sample) {
@@ -43,27 +40,30 @@ function buildCharts(sample) {
     let filteredSample = samplesData.filter(obj=> obj.id === sample);
     let arr_filtered_sample = filteredSample[0];
 
+    console.log(arr_filtered_sample);
     // Get the otu_ids, otu_labels, and sample_values
     let otu_ids = arr_filtered_sample.otu_ids;
     let otu_labels = arr_filtered_sample.otu_labels;
     let sample_values = arr_filtered_sample.sample_values;
 
     // Build a Bubble Chart
-   let traceBubble = {
+   let traceBubble = [{
       x: otu_ids,
       y: sample_values,
       text: otu_labels,
+      mode: 'markers',
           marker: {
           size: sample_values,
           color: otu_ids,
           colorscale: "Earth"
       }
-    };
-
+    }];
     let layoutBubble = {
-      title: 'Bubble Chart',
-      xaxis: { title: 'OTU IDs' },
-      yaxis: { title: 'Sample Values' }
+      title: 'Bacteria Cultures Per Sample',
+      xaxis: { title: 'OTU ID' },
+      yaxis: { title: 'Number of Bacteria' },
+      margin: {t:50},
+      hovermode: "closest",
     }; 
 
       // Render the Bubble Chart
@@ -74,20 +74,27 @@ function buildCharts(sample) {
 
     // Build a Bar Chart
     // Don't forget to slice and reverse the input data appropriately
-    let traceBar = {
-      x: sample_values,
+        
+    //let traceData = sample_values;
+    let slicedData =  sample_values.slice(0,10);
+    let reversedData = slicedData.reverse();
+    
+    let traceData = reversedData;
+        
+    let traceBar = [{
+      x: traceData,
       y: yTicks,
-      orientation: 'h'
-    };
+      orientation: 'h',
+      type: 'bar'
+    }];
 
     let layoutBar = {
-      title: 'Bar Chart',
-      xaxis: { title: 'Sample Values' },
-      yaxis: { title: 'OTU IDs' }
+      title: 'Top 10 Bacteria Cultures Found',
+      xaxis: { title: 'Number of Bacteria' } 
     };
     
     // Render the Bar Chart
-    Plotly.newPlot(bar, traceBar, layoutBar);
+    Plotly.newPlot('bar',traceBar, layoutBar);
 
   });
 }
@@ -98,53 +105,42 @@ function init() {
 
     // Get the names field
     let sampleNames = data.names;
-    let samplesData = data.samples;
-
+    
     // Use d3 to select the dropdown with id of `#selDataset`
     let dropdownMenu = d3.select("#selDataset");
 
     // Use the list of sample names to populate the select options
     // Hint: Inside a loop, you will need to use d3 to append a new
     // option for each sample name.
-    sampleNames.forEach(name => {
-      dropdownMenu.append("option").text(name).property("value",sampleNames[0]);
-    });
+    for (let i = 0; i < sampleNames.length; i++){
+      dropdownMenu
+        .append("option")
+        .text(sampleNames[i])
+        .property("value",sampleNames[i]);
+    };
 
     // Get the first sample from the list
-      let selectedSampleName = dropdownMenu.property("value");
-      //console.log(selectedSampleName);
-      
-    // Use the selected sample name to access the corresponding data
-
-      //let samplesData = data.samples;
-      //let selectedSampleData = samplesData.filter(obj => obj.id === selectedSampleName);
+      let firstSampleName = sampleNames[0];
+      //console.log(firstSampleName);       use this code to verify the first sample is selected.
     
-      let firstSample = samplesData.filter(obj=> obj.id === selectedSampleName);
-      let arr_first_sample = firstSample[0];
-    
-    // Build charts and metadata panel with the first sample
-     buildCharts(firstSample);
-     buildMetadata(arr_first_sample);
+     // Build charts and metadata panel with the first sample
+     buildCharts(firstSampleName);
+     buildMetadata(firstSampleName);
   });
 }
 
-  // Function for event listener
+// Function for event listener
   function optionChanged(newSample) {
+    let dropdownMenu = d3.select("#selDataset");
     // Build charts and metadata panel each time a new sample is selected
-    let dropdown = d3.select("#selDataset");
-
-    //set up an event listener on the dropdown list to detect changes
-    dropdown.on("change", function() {
+       dropdownMenu.on("change", function() {
     
-      // Retrieve the selected sample name from the dropdown list
-      let selectedSampleName = d3.select(this).property("value");
-
-      // Retrieve the selected sample data based on the chosen sample name
-      let selectedSampleData = sampleData[selectedSampleName];
-  
+    // Retrieve the selected sample name from the dropdown list
+       let newSampleName = d3.select(this).property("value");
+     
       // Update and redraw the charts with the new sample data
-      buildCharts(selectedSampleName);
-      buildMetadata(selectedSampleData);
+      buildCharts(newSampleName);
+      buildMetadata(newSampleName);
   });
 }
 
