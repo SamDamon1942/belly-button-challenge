@@ -1,3 +1,5 @@
+let dropdownMenu = d3.select("#selDataset");
+
 // Build the metadata panel
 function buildMetadata(sample) {
   d3.json("https://static.bc-edx.com/data/dl-1-2/m14/lms/starter/samples.json").then((data) => {
@@ -5,28 +7,36 @@ function buildMetadata(sample) {
     // get the metadata field
     let metadataField = data.metadata;
 
+    //use the lines below to verify what I expect to happen with the code
+    //console.log(metadataField);
+    //console.log(sample);
+    
+    //note: the sample shown in the dropdown menu is of type text. Need to convert it to a number
+    let newSample = parseInt(sample);
+    
+    //console.log(newSample);
+
     // Filter the metadata for the object with the desired sample number
-    let filteredMetaData = metadataField.filter(obj => obj.id === sample);
+    let filteredMetaData = metadataField.filter(obj => obj.id === newSample);
+    //console.log(filteredMetaData);
+
     let arr_filtered = filteredMetaData[0];
 
+    //console.log(arr_filtered);
+    
     // Use d3 to select the panel with id of `#sample-metadata`
     let metadataPanel = d3.select("#sample-metadata");
 
+    //let metadataPanel = d3.select(".card-body");
     // Use `.html("") to clear any existing metadata
      metadataPanel.html("");
 
-    // Inside a loop, you will need to use d3 to append new
-    // tags for each key-value in the filtered metadata.
+     for (let key in arr_filtered) {
+      metadataPanel.append("h6").text(`${key.toUpperCase()}: ${arr_filtered[key]}`);
+     }
+  }); 
+}
 
-    var h6Tags = metadataPanel.selectAll("h6")
-
-    var newh6Tags = h6Tags.enter()
-      .append("h6")
-      .text(function(d) {
-        return `${d.key}: ${d.value}`;
-      });
-  });  
-};
 
 
 // function to build both charts
@@ -40,7 +50,6 @@ function buildCharts(sample) {
     let filteredSample = samplesData.filter(obj=> obj.id === sample);
     let arr_filtered_sample = filteredSample[0];
 
-    console.log(arr_filtered_sample);
     // Get the otu_ids, otu_labels, and sample_values
     let otu_ids = arr_filtered_sample.otu_ids;
     let otu_labels = arr_filtered_sample.otu_labels;
@@ -71,7 +80,8 @@ function buildCharts(sample) {
 
     // For the Bar Chart, map the otu_ids to a list of strings for your yticks
     let yTicks = otu_ids.map(id => `OTU ${id}`);
-
+    let yTicksSlice = yTicks.slice(0,10)
+    let yTicksReverse = yTicksSlice.reverse()
     // Build a Bar Chart
     // Don't forget to slice and reverse the input data appropriately
         
@@ -83,7 +93,7 @@ function buildCharts(sample) {
         
     let traceBar = [{
       x: traceData,
-      y: yTicks,
+      y: yTicksReverse,
       orientation: 'h',
       type: 'bar'
     }];
@@ -121,8 +131,7 @@ function init() {
 
     // Get the first sample from the list
       let firstSampleName = sampleNames[0];
-      //console.log(firstSampleName);       use this code to verify the first sample is selected.
-    
+          
      // Build charts and metadata panel with the first sample
      buildCharts(firstSampleName);
      buildMetadata(firstSampleName);
@@ -130,19 +139,16 @@ function init() {
 }
 
 // Function for event listener
-  function optionChanged(newSample) {
-    let dropdownMenu = d3.select("#selDataset");
-    // Build charts and metadata panel each time a new sample is selected
-       dropdownMenu.on("change", function() {
-    
-    // Retrieve the selected sample name from the dropdown list
-       let newSampleName = d3.select(this).property("value");
+function optionChanged(newSample) {
+  
+  // Build charts and metadata panel each time a new sample is selected
+    let newSampleName = dropdownMenu.property("value");
      
-      // Update and redraw the charts with the new sample data
-      buildCharts(newSampleName);
-      buildMetadata(newSampleName);
-  });
-}
+    buildCharts(newSampleName);
+    buildMetadata(newSampleName);
+};
+
+dropdownMenu.on("change",optionChanged);
 
 // Initialize the dashboard
 init();
