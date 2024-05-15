@@ -95,6 +95,7 @@ function buildCharts(sample) {
       x: traceData,
       y: yTicksReverse,
       orientation: 'h',
+      text: otu_labels,
       type: 'bar'
     }];
 
